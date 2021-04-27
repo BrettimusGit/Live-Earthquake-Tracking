@@ -7,7 +7,7 @@
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <!-- Boostrap -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootswatch/4.5.2/minty/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootswatch@4.5.2/dist/slate/bootstrap.min.css">
     <!-- Our CSS -->
     <link rel="stylesheet" type="text/css" href="static/css/style.css">
     <!-- JQuery -->
@@ -27,7 +27,25 @@
     <div class="container-fluid">
         <div class="row">
             <div class="col-md-12">
-                <h1 id="maptitle">TEST </h1>
+                <div class="card border-primary-mb-3" id="selectors">
+                    <div class="card-body">
+                        <h4>Select Live Earthquake Timeframe</h4>
+                        <select id="timeframe">
+                        <option value="all_hour">Past Hour</option>
+                        <option value="all_day">Past Day</option>
+                        <option value="all_week">Past Week</option>
+                        <option value="all_month">Past Month</option>
+                    </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <hr>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+                <h1 id="maptitle"></h1>
             </div>
         </div>
         <div class="row">

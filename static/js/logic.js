@@ -1,23 +1,42 @@
 $(document).ready(function() {
     console.log("Page Loaded");
     buildMap();
+
     // Event Listeners
+    $("#timeframe").change(function() {
+        buildMap();
+    });
 });
 
 function buildMap() {
     // data
     // set title
+    var timeframe_text = $("#timeframe option:selected").text();
+    $("#maptitle").text(`All Earthquakes Recorded by the USGS for the ${timeframe_text}`);
 
     // Stor API endpoint as queryUrl
-    var queryUrl = `https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson`
+    var timeframe = $("#timeframe").val();
+
+    var queryUrl = `https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/${timeframe}.geojson`
 
     // Perform a GET request to query URL
     $.ajax({
         type: "GET",
         url: queryUrl,
         success: function(data) {
-            console.log(data);
-            makeMap(data);
+            // second call
+            $.ajax({
+                type: "GET",
+                url: "/static/data/PB2002_boundaries.json",
+                success: function(tectonic) {
+                    console.log(data);
+                    makeMap(data, tectonic);
+                },
+                error: function(XMLHttpRequest, textStatus, errorThrown) {
+                    alert("Status: " + textStatus);
+                    alert("Error: " + errorThrown);
+                }
+            });
         },
         error: function(XMLHttpRequest, textStatus, errorThrown) {
             alert("Status: " + textStatus);
@@ -26,7 +45,7 @@ function buildMap() {
     });
 }
 
-function makeMap(data) {
+function makeMap(data, tectonic) {
     $("#mapcontainer").empty();
     $("#mapcontainer").append(`<div id="mapid"></div>`);
 
@@ -80,8 +99,15 @@ function makeMap(data) {
         // console.log(marker);
     });
 
+    // Tectonic Plates Add
+    var tectonic_plates = L.geoJSON(tectonic, {
+        color: "orange",
+        weight: 3
+    });
+
     var quake_group = L.layerGroup(earthquakes);
     var circle_group = L.layerGroup(circle_list);
+    var tectonic_layer = L.layerGroup([tectonic_plates]);
 
 
 
@@ -93,12 +119,53 @@ function makeMap(data) {
 
     var overlayMaps = {
         "Markers": quake_group,
-        "Circles": circle_group
+        "Circles": circle_group,
+        "Tectonic Plates": tectonic_layer
     };
 
+    // Legend for Map
     L.control.layers(baseMaps, overlayMaps).addTo(myMap);
 
+    // Pre-selected Layers
+    tectonic_plates.addTo(myMap);
     circle_group.addTo(myMap);
+
+    // STEP 5: Create Static Legend
+    var legend = L.control({ position: "bottomright" });
+    legend.onAdd = function() {
+        var div = L.DomUtil.create("div", "info legend");
+
+        var legendInfo = `<h4 style = "margin-bottom:10px"> Earthquake Depth </h4>
+        <div>
+        <div style = "background:#86F76D;height:10px;width:10px;display:inline-block"> </div> 
+        <div style = "display:inline-block"> Less than 10 Miles</div>
+        </div> 
+        <div>
+        <div style = "background:#1B85FF;height:10px;width:10px;display:inline-block"></div> 
+        <div style = "display:inline-block">10 - 30 Miles</div>
+        </div>
+        <div>
+        <div style = "background:#F9EE8E;height:10px;width:10px;display:inline-block"></div>
+        <div style = "display:inline-block">30 - 50 Miles</div>
+        </div>
+        <div>
+        <div style = "background:#F79865;height:10px;width:10px;display:inline-block"></div> 
+        <div style = "display:inline-block">50 - 70 Miles</div>
+        </div>
+        <div>
+        <div style = "background:#F6585E;height:10px;width:10px;display:inline-block"></div>
+        <div style = "display:inline-block">70 - 90 Miles</div>
+        </div> 
+        <div>
+        <div style = "background:#FF0127;height:10px;width:10px;display:inline-block"></div>
+        <div style = "display:inline-block">Greater than 90 Miles</div>
+        </div>`;
+
+        div.innerHTML = legendInfo;
+        return (div)
+    }
+
+    legend.addTo(myMap);
 
 };
 
