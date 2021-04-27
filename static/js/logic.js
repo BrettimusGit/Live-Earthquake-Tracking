@@ -1,6 +1,5 @@
 $(document).ready(function() {
     console.log("Page Loaded");
-    makeMap();
     buildMap();
     // Event Listeners
 });
@@ -18,6 +17,7 @@ function buildMap() {
         url: queryUrl,
         success: function(data) {
             console.log(data);
+            makeMap(data);
         },
         error: function(XMLHttpRequest, textStatus, errorThrown) {
             alert("Status: " + textStatus);
@@ -58,12 +58,88 @@ function makeMap(data) {
         layers: [light_mode, dark_mode]
     });
 
-    // Legend to switch modes
+    // STEP 3: Create Markers
+
+    var earthquakes = [];
+    var circle_list = [];
+    data.features.forEach(function(earthquake) {
+        var marker = L.geoJSON(earthquake, {
+            onEachFeature: onEachFeature
+        });
+        earthquakes.push(marker);
+
+        var circle = L.geoJSON(earthquake, {
+            pointToLayer: function(feature, latlng) {
+                var geojsonMarkerOptions = createMarkerOptions(feature);
+                return L.circleMarker(latlng, geojsonMarkerOptions);
+            },
+            onEachFeature: onEachFeature
+        });
+        circle_list.push(circle);
+        // var marker = earthquake.geometry.coordinates;
+        // console.log(marker);
+    });
+
+    var quake_group = L.layerGroup(earthquakes);
+    var circle_group = L.layerGroup(circle_list);
+
+
+
+    // STEP 4: Layer Legend
     var baseMaps = {
         "Light Mode": light_mode,
         "Dark Mode": dark_mode
     };
 
-    L.control.layers(baseMaps).addTo(myMap);
+    var overlayMaps = {
+        "Markers": quake_group,
+        "Circles": circle_group
+    };
+
+    L.control.layers(baseMaps, overlayMaps).addTo(myMap);
+
+    circle_group.addTo(myMap);
 
 };
+
+// Pretty Circles
+
+function createMarkerOptions(feature) {
+    var depth = feature.geometry.coordinates[2];
+    var depthColor = "";
+    if (depth > 90) {
+        depthColor = "#FF0127";
+    } else if (depth > 70) {
+        depthColor = "#F6585E";
+    } else if (depth > 50) {
+        depthColor = "#F79865";
+    } else if (depth > 30) {
+        depthColor = "#F9EE8E";
+    } else if (depth > 10) {
+        depthColor = "#1B85FF";
+    } else {
+        depthColor = "#86F76D";
+    }
+
+    // Marker data
+    var geojsonMarkerOptions = {
+        radius: (feature.properties.mag * 4) + 1,
+        fillColor: depthColor,
+        color: "#000",
+        weight: 1,
+        opacity: 1,
+        fillOpacity: 0.8
+    };
+
+    return (geojsonMarkerOptions)
+}
+
+
+// called to create markers 
+
+function onEachFeature(feature, layer) {
+    // does this feature have a property named popupContent?
+    if (feature.properties && feature.properties.place) {
+        layer.bindPopup(feature.properties.title);
+    }
+}
